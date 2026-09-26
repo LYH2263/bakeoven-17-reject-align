@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api/client";
+import { Conflict, fmtInterval, phaseLabel } from "../utils/schedule";
 
 const drawerLinks = [
   ["/gantt", "甘特台"],
@@ -12,7 +13,6 @@ const drawerLinks = [
 ];
 
 type Oven = { id: number; label: string; capacity_note: string };
-type Conflict = { id: number; batch_code: string; oven_id: number; detail: string; created_at: string };
 type Block = {
   batch_id: number;
   code: string;
@@ -22,6 +22,13 @@ type Block = {
   start_min: number;
   end_min: number;
 };
+
+function conflictSummary(c: Conflict): string {
+  if (!c.rival_code || c.attempt_phase == null || c.rival_phase == null) return c.detail;
+  const attempt = c.attempt_start_min != null && c.attempt_end_min != null
+    ? fmtInterval(c.attempt_start_min, c.attempt_end_min) : "";
+  return `本次${phaseLabel(c.attempt_phase)} ${attempt} 撞 ${c.rival_code} ${phaseLabel(c.rival_phase)}`;
+}
 
 export default function Layout() {
   const loc = useLocation();
@@ -118,7 +125,7 @@ export default function Layout() {
               title={c.detail}
             >
               <span className="conflict-chip-code">{c.batch_code}</span>
-              <span className="conflict-chip-detail">{c.detail}</span>
+              <span className="conflict-chip-detail">{conflictSummary(c)}</span>
             </NavLink>
           ))}
         </div>

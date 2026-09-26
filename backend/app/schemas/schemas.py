@@ -54,6 +54,14 @@ class ConflictOut(BaseModel):
     oven_id: int
     detail: str
     created_at: datetime
+    attempt_phase: str | None = None
+    attempt_start_min: int | None = None
+    attempt_end_min: int | None = None
+    rival_batch_id: int | None = None
+    rival_code: str | None = None
+    rival_phase: str | None = None
+    rival_start_min: int | None = None
+    rival_end_min: int | None = None
     model_config = {"from_attributes": True}
 
 

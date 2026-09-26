@@ -19,6 +19,7 @@ from app.services.oven_engine import (
     build_occupancies,
     find_conflicts,
     next_free_window,
+    phase_label,
 )
 
 api_router = APIRouter()
@@ -26,6 +27,23 @@ api_router = APIRouter()
 
 def _recipe(p: Product) -> RecipeDurations:
     return RecipeDurations(p.ferment_min, p.bake_min)
+
+
+def _fmt_min(value: int) -> str:
+    return f"{value // 60:02d}:{value % 60:02d}"
+
+
+def _fmt_interval(start: int, end: int) -> str:
+    return f"[{_fmt_min(start)},{_fmt_min(end)})"
+
+
+def _pick_hit(hits: list[tuple[Occupancy, Occupancy]]) -> tuple[Occupancy, Occupancy]:
+    # 烘烤是占炉硬约束；发酵与烘烤同时撞上时优先报烘烤，
+    # 使拒绝记录与甘特上对手的烘烤色块对齐。
+    for ex, cand in hits:
+        if cand.phase == "bake":
+            return ex, cand
+    return hits[0]
 
 
 def _all_occupancies(db: Session) -> list[Occupancy]:
@@ -91,12 +109,31 @@ def create_batch(body: BatchCreate, db: Session = Depends(get_db)):
     hits = find_conflicts(existing, candidates)
     code = body.code or f"BO-{body.start_min}"
     if hits:
-        ex, cand = hits[0]
+        ex, cand = _pick_hit(hits)
+        rival = db.get(Batch, ex.batch_id)
+        rival_code = rival.code if rival else f"#{ex.batch_id}"
         detail = (
-            f"与批次#{ex.batch_id} 的 {ex.phase} 段重叠："
-            f"[{cand.interval.start},{cand.interval.end})"
+            f"与对手批次 {rival_code} 的{phase_label(ex.phase)}段 "
+            f"{_fmt_interval(ex.interval.start, ex.interval.end)} 重叠；"
+            f"本次拟排{phase_label(cand.phase)}段 "
+            f"{_fmt_interval(cand.interval.start, cand.interval.end)}"
         )
-        db.add(ConflictLog(batch_code=code, oven_id=oven.id, detail=detail))
+        # 拒绝才写记录；记录中的四个端点直接取自甘特色块所用的同一组 Occupancy
+        db.add(
+            ConflictLog(
+                batch_code=code,
+                oven_id=oven.id,
+                detail=detail,
+                attempt_phase=cand.phase,
+                attempt_start_min=cand.interval.start,
+                attempt_end_min=cand.interval.end,
+                rival_batch_id=ex.batch_id,
+                rival_code=rival_code,
+                rival_phase=ex.phase,
+                rival_start_min=ex.interval.start,
+                rival_end_min=ex.interval.end,
+            )
+        )
         db.commit()
         raise HTTPException(409, detail)
     batch = Batch(

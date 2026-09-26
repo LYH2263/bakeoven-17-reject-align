@@ -26,11 +26,22 @@ def seed_if_empty(db: Session) -> None:
             Batch(product_id=products[2].id, oven_id=ovens[1].id, code="BO-1000", start_min=10 * 60, status="scheduled"),
         ]
     )
+    db.flush()
+    bo_0900 = db.scalar(select(Batch).where(Batch.code == "BO-0900"))
+    # BO-0900：乡村欧包 09:00 起，发酵 [540,580)、烘烤 [580,615)
     db.add(
         ConflictLog(
             batch_code="BO-试排",
             oven_id=ovens[0].id,
-            detail="试算与 BO-0900 烘烤段重叠（半开区间检测）",
+            detail="与对手批次 BO-0900 的烘烤段 [09:40,10:15) 重叠；本次拟排烘烤段 [10:00,10:35)",
+            attempt_phase="bake",
+            attempt_start_min=10 * 60,
+            attempt_end_min=10 * 60 + 35,
+            rival_batch_id=bo_0900.id,
+            rival_code="BO-0900",
+            rival_phase="bake",
+            rival_start_min=9 * 60 + 40,
+            rival_end_min=10 * 60 + 15,
         )
     )
     db.commit()

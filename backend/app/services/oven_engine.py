@@ -32,6 +32,13 @@ class Occupancy:
     batch_id: int
 
 
+PHASE_LABELS = {"ferment": "发酵", "bake": "烘烤"}
+
+
+def phase_label(phase: str) -> str:
+    return PHASE_LABELS.get(phase, phase)
+
+
 def build_occupancies(
     oven_id: int,
     batch_id: int,

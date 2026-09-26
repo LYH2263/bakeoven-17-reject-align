@@ -1,20 +1,28 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
+import { fmtMin } from "../utils/schedule";
 type P = { id: number; name: string }; type O = { id: number; label: string };
 type B = { id: number; code: string; product_name?: string; oven_label?: string; start_min: number; ferment_end?: number; bake_end?: number; status: string };
-function fmt(m: number) { const h = Math.floor(m/60), mm = m%60; return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`; }
 export default function BatchesPage() {
   const [products, setProducts] = useState<P[]>([]);
   const [ovens, setOvens] = useState<O[]>([]);
   const [rows, setRows] = useState<B[]>([]);
   const [pid, setPid] = useState<number | "">(""); const [oid, setOid] = useState<number | "">("");
   const [start, setStart] = useState(11 * 60); const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
+  const [params] = useSearchParams();
+  const focusCode = params.get("code");
   const reload = () => api<B[]>("/batches").then(setRows);
   useEffect(() => {
     api<P[]>("/products").then(p => { setProducts(p); if (p[0]) setPid(p[0].id); });
     api<O[]>("/ovens").then(o => { setOvens(o); if (o[0]) setOid(o[0].id); });
     reload();
   }, []);
+  useEffect(() => {
+    if (!focusCode || rows.length === 0) return;
+    const el = document.getElementById(`batch-${focusCode}`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusCode, rows]);
   async function create() {
     setMsg(""); setErr("");
     try {
@@ -34,8 +42,9 @@ export default function BatchesPage() {
     {msg && <div className="ok">{msg}</div>}
     {err && <div className="err">{err}</div>}
     <table className="table"><thead><tr><th>批次</th><th>产品</th><th>炉位</th><th>发酵</th><th>烘烤结束</th><th>状态</th></tr></thead>
-    <tbody>{rows.map(b => <tr key={b.id}><td className="mono">{b.code}</td><td>{b.product_name}</td><td>{b.oven_label}</td>
-      <td className="mono">{fmt(b.start_min)}–{fmt(b.ferment_end ?? b.start_min)}</td>
-      <td className="mono">{fmt(b.bake_end ?? b.start_min)}</td><td>{b.status}</td></tr>)}</tbody></table>
+    <tbody>{rows.map(b => <tr key={b.id} id={`batch-${b.code}`} className={b.code === focusCode ? "batch-row--focus" : undefined}>
+      <td className="mono">{b.code}</td><td>{b.product_name}</td><td>{b.oven_label}</td>
+      <td className="mono">{fmtMin(b.start_min)}–{fmtMin(b.ferment_end ?? b.start_min)}</td>
+      <td className="mono">{fmtMin(b.bake_end ?? b.start_min)}</td><td>{b.status}</td></tr>)}</tbody></table>
   </>);
 }

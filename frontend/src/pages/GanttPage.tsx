@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import { fmtInterval, phaseLabel } from "../utils/schedule";
 type Block = { batch_id: number; code: string; oven_id: number; oven_label: string; phase: string; start_min: number; end_min: number };
 const DAY_START = 8 * 60, DAY_END = 18 * 60, SPAN = DAY_END - DAY_START;
 function pct(m: number) { return ((m - DAY_START) / SPAN) * 100; }
@@ -25,7 +26,7 @@ export default function GanttPage() {
             {row.blocks.map((b, i) => (
               <div key={i} className={`gantt-block ${b.phase}`}
                 style={{ left: `${pct(b.start_min)}%`, width: `${((b.end_min - b.start_min) / SPAN) * 100}%` }}
-                title={`${b.code} ${b.phase}`}>
+                title={`${b.code} ${phaseLabel(b.phase)} ${fmtInterval(b.start_min, b.end_min)}`}>
                 {b.code}/{b.phase === "ferment" ? "酵" : "烤"}
               </div>
             ))}

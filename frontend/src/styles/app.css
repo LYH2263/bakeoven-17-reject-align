@@ -248,6 +248,27 @@ select, input, .gantt-deck button, .toolbar button {
 .mono { font-family: "IBM Plex Mono", monospace; }
 .err { color: #ff9b7a; } .ok { color: #e8c48a; }
 
+.batch-link {
+  color: var(--bake-copper);
+  font-weight: 700;
+  border-bottom: 1px dashed var(--bake-ember);
+}
+.batch-link:hover { color: #ffd9a8; border-bottom-style: solid; }
+.batch-row--focus > td {
+  background: rgba(242, 184, 128, .14);
+  box-shadow: inset 3px 0 0 var(--bake-copper);
+  animation: batch-focus-flash 1.6s ease-out;
+}
+@keyframes batch-focus-flash {
+  0% { background: rgba(242, 184, 128, .32); }
+  100% { background: rgba(242, 184, 128, .14); }
+}
+.conflict-detail-cell {
+  color: var(--bake-muted);
+  font-size: .82rem;
+  max-width: 320px;
+}
+
 .gantt { display: flex; flex-direction: column; gap: .65rem; }
 .gantt-row {
   display: grid;
