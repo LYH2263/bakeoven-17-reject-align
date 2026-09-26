@@ -23,6 +23,8 @@ from app.services.oven_engine import (
 
 api_router = APIRouter()
 
+_PHASE_CN = {"ferment": "发酵", "bake": "烘烤"}
+
 
 def _recipe(p: Product) -> RecipeDurations:
     return RecipeDurations(p.ferment_min, p.bake_min)
@@ -92,11 +94,27 @@ def create_batch(body: BatchCreate, db: Session = Depends(get_db)):
     code = body.code or f"BO-{body.start_min}"
     if hits:
         ex, cand = hits[0]
+        opponent = db.get(Batch, ex.batch_id)
+        opponent_code = opponent.code if opponent else f"#{ex.batch_id}"
         detail = (
-            f"与批次#{ex.batch_id} 的 {ex.phase} 段重叠："
-            f"[{cand.interval.start},{cand.interval.end})"
+            f"与批次{opponent_code} 的{_PHASE_CN[ex.phase]}段重叠："
+            f"拟排{_PHASE_CN[cand.phase]} [{cand.interval.start},{cand.interval.end})"
+            f" 撞上对手{_PHASE_CN[ex.phase]} [{ex.interval.start},{ex.interval.end})"
         )
-        db.add(ConflictLog(batch_code=code, oven_id=oven.id, detail=detail))
+        db.add(
+            ConflictLog(
+                batch_code=code,
+                oven_id=oven.id,
+                detail=detail,
+                opponent_code=opponent_code,
+                opponent_phase=ex.phase,
+                opponent_start_min=ex.interval.start,
+                opponent_end_min=ex.interval.end,
+                candidate_phase=cand.phase,
+                candidate_start_min=cand.interval.start,
+                candidate_end_min=cand.interval.end,
+            )
+        )
         db.commit()
         raise HTTPException(409, detail)
     batch = Batch(

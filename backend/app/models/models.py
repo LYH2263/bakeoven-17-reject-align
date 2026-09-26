@@ -38,4 +38,13 @@ class ConflictLog(Base):
     batch_code: Mapped[str] = mapped_column(String(40))
     oven_id: Mapped[int] = mapped_column(Integer)
     detail: Mapped[str] = mapped_column(String(240))
+    # 对手（已排产）信息：与甘特 /gantt 上对手色块的端点一致
+    opponent_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    opponent_phase: Mapped[str | None] = mapped_column(String(10), nullable=True)  # ferment | bake
+    opponent_start_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    opponent_end_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # 这次想排入的阶段和起止
+    candidate_phase: Mapped[str | None] = mapped_column(String(10), nullable=True)  # ferment | bake
+    candidate_start_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    candidate_end_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

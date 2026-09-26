@@ -246,7 +246,18 @@ select, input, .gantt-deck button, .toolbar button {
   text-align: left; font-size: .92rem;
 }
 .mono { font-family: "IBM Plex Mono", monospace; }
+.table a { color: var(--bake-copper); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.table a:hover { color: #ffd9a8; }
 .err { color: #ff9b7a; } .ok { color: #e8c48a; }
+.batch-row--hot > td {
+  background: rgba(242, 184, 128, .18);
+  box-shadow: inset 3px 0 0 var(--bake-copper);
+  animation: batch-hot-flash 1.6s ease-in-out 2;
+}
+@keyframes batch-hot-flash {
+  0%, 100% { background: rgba(242, 184, 128, .18); }
+  50% { background: rgba(242, 184, 128, .38); }
+}
 
 .gantt { display: flex; flex-direction: column; gap: .65rem; }
 .gantt-row {

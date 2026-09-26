@@ -31,6 +31,10 @@ def seed_if_empty(db: Session) -> None:
             batch_code="BO-试排",
             oven_id=ovens[0].id,
             detail="试算与 BO-0900 烘烤段重叠（半开区间检测）",
+            opponent_code="BO-0900",
+            opponent_phase="bake",
+            opponent_start_min=9 * 60 + products[0].ferment_min,
+            opponent_end_min=9 * 60 + products[0].ferment_min + products[0].bake_min,
         )
     )
     db.commit()
